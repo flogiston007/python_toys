@@ -6,8 +6,8 @@ import socket
 # settings
 server1 = "https://horizon.stellar.org/"
 server2 = "https://horizon-testnet.stellar.org/"
-comparing_key = "history_latest_ledger"
-# comparing_key = "core_version"
+# comparing_key = "history_latest_ledger"
+comparing_key = "core_version"
 
 class bcolors:
     OKCYAN = '\033[96m'
