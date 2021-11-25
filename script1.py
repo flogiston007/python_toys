@@ -4,10 +4,10 @@ from urllib.error import HTTPError, URLError
 import socket
 
 # settings
-servers = ['https://horizon.stellar.org/', 
-'https://horizon-testnet.stellar.org/']
-
-comparing_key = "core_version"
+server1 = "https://horizon.stellar.org/"
+server2 = "https://horizon-testnet.stellar.org/"
+comparing_key = "history_latest_ledger"
+# comparing_key = "core_version"
 
 class bcolors:
     OKCYAN = '\033[96m'
@@ -25,23 +25,25 @@ def msgPrint (type_msg, msg):
     elif type_msg == 'info':
         print(bcolors.OKCYAN + "[INFO] " + bcolors.ENDC + msg)
     elif type_msg == 'curr':
-        print(bcolors.BOLD + "[---] " + bcolors.ENDC + msg)   
+        print(bcolors.BOLD + "[---] " + bcolors.ENDC + msg)  
+    elif type_msg == '':
+        print('\n' + msg) 
 
 def getJsonData (server):
     try:
         msgPrint("curr", f"Connecting to sources: {server}")
         response = urllib.request.urlopen(server, timeout=5)
-        element = parseJsonData(response)
+        element = parseJsonData(response, server)
         return element
     except HTTPError as error:
         msgPrint("err", f'Data not retrieved from URL: {server}')
     except URLError as error:
         if isinstance(error.reason, socket.timeout):
-        	msgPrint("err", f'socket timed out - URL {prod_server}')
+        	msgPrint("err", f'socket timed out - URL {server}')
         else:
         	msgPrint("err", 'some other error happened')
 
-def parseJsonData (response):
+def parseJsonData (response, uri):
     try:
         data = json.loads(response.read())
         msgPrint('succ', f"Data from {uri} has been successfully retrieved")
@@ -53,24 +55,35 @@ def parseJsonData (response):
     except ValueError:  # includes simplejson.decoder.JSONDecodeError
         msgPrint('err', f"Decoding JSON from {uri} has failed")
     
+def getResultsOfComparing (serv1, serv2):
+	value_from_json = []
+	clean_val = []
+	value_from_json.append(getJsonData(serv1))
+	value_from_json.append(getJsonData(serv2))
+	try:
+		clean_val.append(value_from_json[0].split()[1])
+		clean_val.append(value_from_json[1].split()[1])
+		msgPrint("info", f'JSON strings by key {comparing_key} are splitted')
+	except Exception:
+		msgPrint("info", f'JSON strings by key {comparing_key} are not splitted')
+		clean_val.append(value_from_json[0])
+		clean_val.append(value_from_json[1])
+	finally:
+		t = compareTwoEntities(clean_val[0], clean_val[1])
+		msgPrint('info', f'Compared values: \n{serv1} key: {clean_val[0]} \n{serv2} key: {clean_val[1]}')
+		return t
+
+def compareTwoEntities (val1, val2):
+    	if val1 == val2:
+    		return 1
+    	else:
+    		return 0
 
 
 if __name__ == "__main__":
     msgPrint('info', "Comparison between the prod version and the dev version")
 
-    comparing_values = []
-    for uri in servers:
-    	msgPrint('info', f'Got URL: {uri}')
-    	comparing_values.append(getJsonData(uri))
-    	
-    msgPrint('info', 'Checking for Identity\n')
-    for i in range(len(comparing_values)-1):
-    	# msgPrint('info', comparing_values[i])
-    	if comparing_values[i] != comparing_values[i+1]:
-    		msgPrint('err', "Found difference between servers!")
-    		msgPrint('info', f"{comparing_values[i]}")
-    		msgPrint('info', f"{comparing_values[i+1]}")
-    	else:
-	    	msgPrint('succ', "Difference between versions not found")
-	    	msgPrint('info', f"{comparing_values[i]}")
-	    	msgPrint('info', f"{comparing_values[i+1]}")
+    if (getResultsOfComparing(server1, server2) == 0):
+    	msgPrint("err", f'Found difference between versions!')
+    else:
+    	msgPrint("succ", f'Difference between versions not found')
