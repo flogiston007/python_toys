@@ -4,8 +4,8 @@ from urllib.error import HTTPError, URLError
 import socket
 
 # settings
-server1 = "https://horizon.stellar.org/"
-server2 = "https://horizon-testnet.stellar.org/"
+server1 = "site1.org/"
+server2 = "site.org/"
 # comparing_key = "history_latest_ledger"
 comparing_key = "core_version"
 
